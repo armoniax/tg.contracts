@@ -47,7 +47,7 @@ struct CUSTODY_TBL bind_t {
     bind_t(const uint64_t& i): tgid(i) {}
     uint64_t by_account() const { return account.value; }
 
-    EOSLIB_SERIALIZE( bind_t, (tgid)(tgid)(status)(updated_at) )
+    EOSLIB_SERIALIZE( bind_t, (tgid)(account)(status)(updated_at) )
 
     typedef eosio::multi_index
     <"binds"_n, bind_t,
