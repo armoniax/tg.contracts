@@ -39,10 +39,10 @@ public:
     void init(const name& account);
 
     [[eosio::action]]
-    void bindtg(const name& account, const uint64_t& tgid);
+    void bind(const name& account, const uint64_t& tgid);
 
     [[eosio::action]]
-    void check(const uint64_t& tgid);
+    void confirm(const uint64_t& tgid);
 
     [[eosio::action]]
     void delbind(const uint64_t& tgid);

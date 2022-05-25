@@ -18,12 +18,11 @@ using namespace std;
 using namespace eosio;
 
 namespace bind_status {
-    static constexpr eosio::name INIT       = "init"_n;
-    static constexpr eosio::name BIND       = "bind"_n;
-    static constexpr eosio::name CHECKED    = "checked"_n;
+    static constexpr eosio::name BIND       = "bound"_n;
+    static constexpr eosio::name CONFIRMED  = "confirmed"_n;
 };
 
-#define CUSTODY_TBL [[eosio::table, eosio::contract("tg.bind")]]
+#define TG_TBL [[eosio::table, eosio::contract("tg.bind")]]
 
 struct [[eosio::table("global"), eosio::contract("tg.bind")]] global_t {
     bool                enable = false;
@@ -34,10 +33,10 @@ struct [[eosio::table("global"), eosio::contract("tg.bind")]] global_t {
 
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
-struct CUSTODY_TBL bind_t {
+struct TG_TBL bind_t {
     uint64_t            tgid;
     name                account;
-    name                status = bind_status::BIND;
+    bool                confirmed;
     time_point          updated_at;
 
     uint64_t    primary_key()const { return tgid; }
@@ -47,7 +46,7 @@ struct CUSTODY_TBL bind_t {
     bind_t(const uint64_t& i): tgid(i) {}
     uint64_t by_account() const { return account.value; }
 
-    EOSLIB_SERIALIZE( bind_t, (tgid)(account)(status)(updated_at) )
+    EOSLIB_SERIALIZE( bind_t, (tgid)(account)(confirmed)(updated_at) )
 
     typedef eosio::multi_index
     <"binds"_n, bind_t,
