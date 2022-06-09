@@ -32,6 +32,8 @@ static constexpr uint32_t MAX_TITLE_SIZE        = 64;
 namespace wasm { namespace db {
 
 #define TG_TBL [[eosio::table, eosio::contract("tg.redpack")]]
+#define TG_TBL_NAME(name) [[eosio::table(name), eosio::contract("tg.redpack")]]
+
 struct TG_TBL_NAME("global") global_t {
     name tg_admin;
     uint16_t expire_hours;
