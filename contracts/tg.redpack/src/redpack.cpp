@@ -13,9 +13,8 @@ using namespace wasm;
 static constexpr eosio::name active_permission{"active"_n};
 
 // transfer out from contract self
-#define TRANSFER(bank, to, quantity, memo) \
+#define TRANSFER_OUT(bank, to, quantity, memo) \
     { action(permission_level{get_self(), "active"_n }, bank, "transfer"_n, std::make_tuple( _self, to, quantity, memo )).send(); }
-
 
 inline int64_t get_precision(const symbol &s) {
     int64_t digit = s.precision();
@@ -47,17 +46,18 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
 
     auto fee = _calc_fee( fee_info.fee, count );
     CHECK(fee < quantity, "not enough ")
+
     redpack_t::idx_t redpacks( _self, _self.value );
     auto id = redpacks.available_primary_key();
     redpacks.emplace( _self, [&]( auto& row ) {
         row.id 					        = id;
         row.sender 			            = from;
         row.pw_hash                     = string( parts[0] );
-        row.total_quantity              = quantity;
+        row.total_quantity              = quantity - fee;
         row.fee                         = fee;
         row.receiver_count		        = count;
         //asset( 0, quantity.symbol )
-        row.remain_quantity		        = quantity;
+        row.remain_quantity		        = quantity - fee;
         row.remain_count	            = count;
         row.status			            = redpack_status::CREATED;
         row.created_at                  = time_point_sec( current_time_point() );
@@ -80,12 +80,12 @@ void redpack::claim( const name& admin, const name& claimer, const uint64_t& pac
     uint128_t sec_index = get_unionid(claimer,pack_id);
     check( claims_index.find(sec_index) == claims_index.end() , "Can't repeat to receive" );
 
-    fee_t fee(redpack.total_quantity.symbol);
-    CHECK( _db.get(fee), "fee not found" );
+    fee_t fee_info(redpack.total_quantity.symbol);
+    CHECK( _db.get(fee_info), "fee not found" );
 
     asset redpack_quantity =_calc_red_amt(redpack);
     // eosio::print(redpack_quantity.amount);
-    TRANSFER(fee.contract_name, claimer, redpack_quantity, string("red pack transfer"));
+    TRANSFER_OUT(fee_info.contract_name, claimer, redpack_quantity, string("red pack transfer"));
 
     redpack.remain_count--;
     redpack.remain_quantity-=redpack_quantity;
@@ -115,9 +115,9 @@ void redpack::cancel( const name& admin, const uint64_t& pack_id )
     // CHECK( redpack.status == redpack_status::CREATED, "redpack has expired" );
     // CHECK( current_time_point() > redpack.created_at + eosio::days(_gstate.expire_hours), "expiration date is not reached" );
 
-    fee_t fee(redpack.total_quantity.symbol);
-    CHECK( _db.get(fee), "fee not found" );
-    TRANSFER(fee.contract_name, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
+    fee_t fee_info(redpack.total_quantity.symbol);
+    CHECK( _db.get(fee_info), "fee not found" );
+    TRANSFER_OUT(fee_info.contract_name, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
     redpack.status = redpack_status::CANCELLED;
     _db.set(redpack);
 
@@ -154,7 +154,7 @@ void redpack::setconf(const name& admin, const uint16_t& hours)
 
 asset redpack::_calc_fee(const asset& fee, const uint64_t count) {
     // calc order quantity value by price
-    auto value = multiply_decimal64(fee.amount, count, 0);
+    auto value = multiply<uint64_t>(fee.amount, count);
 
     return asset(value, fee.symbol);
 }
@@ -172,16 +172,13 @@ asset redpack::_calc_red_amt(const redpack_t& redpack) {
 }
 
 uint64_t redpack::rand(asset max_quantity) {
-    uint64_t value = 0;
-    eosio::print(get_precision(max_quantity) * 100);
-    if(abs(tapos_block_prefix()) % max_quantity.amount < get_precision(max_quantity) / 100){
-        value = get_precision(max_quantity) * 100;
-        return value;
-
-    }else{
-        value = abs(tapos_block_prefix()) % max_quantity.amount;
-        return value;
-
-    }
+    auto mixedBlock = tapos_block_prefix() * tapos_block_num();
+    const char *mixedChar = reinterpret_cast<const char *>(&mixedBlock);
+    auto hash = sha256( (char *)mixedChar, sizeof(mixedChar));
+    auto r1 = (uint64_t)hash.data()[0];
+    float rand= 0.01+r1 % 100 / 100.00;
+    uint64_t rand_value = max_quantity.amount * rand;
+    uint64_t min_value = get_precision(max_quantity) / 100;
+    return rand_value < min_value ? min_value : rand_value;
 
 }
