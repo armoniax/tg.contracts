@@ -29,9 +29,9 @@ public:
 
     [[eosio::on_notify("*::transfer")]] void ontransfer(name from, name to, asset quantity, string memo);
 
-    [[eosio::action]] void claim( const name& admin, const name& claimer, const uint64_t& pack_id, const string& pwhash );
+    [[eosio::action]] void claim( const name& claimer, const uint64_t& pack_id, const string& pwhash );
 
-    [[eosio::action]] void cancel( const name& admin, const uint64_t& pack_id );
+    [[eosio::action]] void cancel( const uint64_t& pack_id );
 
     [[eosio::action]] void addfee( const asset& fee, const name& contract);
 

@@ -65,10 +65,9 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
    });
 
 }
-void redpack::claim( const name& admin, const name& claimer, const uint64_t& pack_id, const string& pwhash )
+void redpack::claim( const name& claimer, const uint64_t& pack_id, const string& pwhash )
 {
-    require_auth( admin );
-    CHECK( _gstate.tg_admin == admin, " permission denied " );
+    require_auth( _gstate.tg_admin );
 
     redpack_t redpack(pack_id);
     CHECK( _db.get(redpack), "redpack not found" );
@@ -107,17 +106,18 @@ void redpack::claim( const name& admin, const name& claimer, const uint64_t& pac
 
 }
 
-void redpack::cancel( const name& admin, const uint64_t& pack_id )
+void redpack::cancel( const uint64_t& pack_id )
 {
-    require_auth( admin );
+    require_auth( _gstate.tg_admin );
     redpack_t redpack(pack_id);
     CHECK( _db.get(redpack), "redpack not found" );
-    // CHECK( redpack.status == redpack_status::CREATED, "redpack has expired" );
-    // CHECK( current_time_point() > redpack.created_at + eosio::days(_gstate.expire_hours), "expiration date is not reached" );
+    CHECK( redpack.status == redpack_status::CREATED, "redpack has expired" );
+    CHECK( current_time_point() > redpack.created_at + eosio::days(_gstate.expire_hours), "expiration date is not reached" );
 
     fee_t fee_info(redpack.total_quantity.symbol);
     CHECK( _db.get(fee_info), "fee not found" );
-    TRANSFER_OUT(fee_info.contract_name, redpack.sender, redpack.remain_quantity, string("red pack cancel transfer"));
+    asset cancelamt = redpack.remain_quantity + fee_info.fee * redpack.remain_count;
+    TRANSFER_OUT(fee_info.contract_name, redpack.sender, cancelamt, string("red pack cancel transfer"));
     redpack.status = redpack_status::CANCELLED;
     _db.set(redpack);
 
