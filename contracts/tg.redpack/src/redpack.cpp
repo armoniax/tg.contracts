@@ -45,11 +45,10 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
     CHECK( type == 0 || type == 1, "redpack type invalid" );
 
     auto fee_info = fee_t(quantity.symbol);
-    asset fee = asset( 0, quantity.symbol );
-    if(_db.get(fee_info)){
-        fee = _calc_fee( fee_info.fee, count );
-    }
-    CHECK(fee < quantity, "not enough ");
+    CHECK( _db.get(fee_info), "fee not found" );
+
+    asset fee = _calc_fee( fee_info.fee, count );
+    CHECK( fee < quantity, "not enough " );
 
     redpack_t::idx_t redpacks( _self, _self.value );
     auto id = redpacks.available_primary_key();
