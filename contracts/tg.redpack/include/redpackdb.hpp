@@ -63,6 +63,7 @@ struct TG_TBL redpack_t {
     uint64_t        remain_count         = 0;
     asset           fee;
     name            status;
+    uint16_t        type;  //0 random,1 mean
     time_point      created_at;
     time_point      updated_at;
 
@@ -80,7 +81,7 @@ struct TG_TBL redpack_t {
     > idx_t;
 
     EOSLIB_SERIALIZE( redpack_t, (id)(sender)(pw_hash)(total_quantity)(receiver_count)(remain_quantity)
-                              (remain_count)(fee)(status)(created_at)(updated_at) )
+                              (remain_count)(fee)(status)(type)(created_at)(updated_at) )
 };
 
 struct TG_TBL claim_t {

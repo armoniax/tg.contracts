@@ -33,19 +33,23 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
 
 	CHECK( quantity.amount > 0, "quantity must be positive" )
 
-    auto fee_info = fee_t(quantity.symbol);
-    CHECK( _db.get(fee_info), "coin not found" );
-
     //memo params format:
-    //${pwhash} | count
+    //${pwhash} : count : type
     vector<string_view> memo_params = split( memo, ":" );
     auto parts = split( memo, ":" );
-    CHECK( parts.size() >= 2, "Expected format 'pwhash : count'" );
+    CHECK( parts.size() >= 3, "Expected format 'pwhash : count : type'" );
 
     auto count = stoi(string(parts[1]));
 
-    auto fee = _calc_fee( fee_info.fee, count );
-    CHECK(fee < quantity, "not enough ")
+    auto type = stoi(string(parts[2]));
+    CHECK( type == 0 || type == 1, "redpack type invalid" );
+
+    auto fee_info = fee_t(quantity.symbol);
+    asset fee = asset( 0, quantity.symbol );
+    if(_db.get(fee_info)){
+        fee = _calc_fee( fee_info.fee, count );
+    }
+    CHECK(fee < quantity, "not enough ");
 
     redpack_t::idx_t redpacks( _self, _self.value );
     auto id = redpacks.available_primary_key();
@@ -60,6 +64,7 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
         row.remain_quantity		        = quantity - fee;
         row.remain_count	            = count;
         row.status			            = redpack_status::CREATED;
+        row.type			            = type;
         row.created_at                  = time_point_sec( current_time_point() );
         row.updated_at                  = time_point_sec( current_time_point() );
    });
@@ -73,6 +78,7 @@ void redpack::claim( const name& claimer, const uint64_t& pack_id, const string&
     CHECK( _db.get(redpack), "redpack not found" );
     CHECK( redpack.pw_hash == pwhash, "incorrect password" );
     CHECK( redpack.status == redpack_status::CREATED, "redpack has expired" );
+    CHECK( redpack.type == 0 || redpack.type == 1, "redpack type invalid" );
 
     claim_t::idx_t claims(_self, _self.value);
     auto claims_index = claims.get_index<"unionid"_n>();
@@ -81,9 +87,17 @@ void redpack::claim( const name& claimer, const uint64_t& pack_id, const string&
 
     fee_t fee_info(redpack.total_quantity.symbol);
     CHECK( _db.get(fee_info), "fee not found" );
+    asset redpack_quantity;
 
-    asset redpack_quantity =_calc_red_amt(redpack);
-    // eosio::print(redpack_quantity.amount);
+    switch(redpack.type){
+        case 0  :
+            redpack_quantity = _calc_red_amt(redpack);
+            break;
+        case 1  :
+            redpack_quantity = redpack.total_quantity/redpack.receiver_count;
+            break;
+    }
+
     TRANSFER_OUT(fee_info.contract_name, claimer, redpack_quantity, string("red pack transfer"));
 
     redpack.remain_count--;
@@ -128,7 +142,6 @@ void redpack::addfee( const asset& fee, const name& contract)
     require_auth( _self );
 
     auto fee_info = fee_t(fee.symbol);
-    CHECK( !_db.get(fee_info), "coin already exists" );
     fee_info.fee = fee;
     fee_info.contract_name = contract;
     _db.set( fee_info );
