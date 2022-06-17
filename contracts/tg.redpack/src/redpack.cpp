@@ -93,7 +93,7 @@ void redpack::claim( const name& claimer, const uint64_t& pack_id, const string&
             redpack_quantity = _calc_red_amt(redpack);
             break;
         case 1  :
-            redpack_quantity = redpack.total_quantity/redpack.receiver_count;
+            redpack_quantity = redpack.remain_count == 1 ? redpack.remain_quantity : redpack.total_quantity/redpack.receiver_count;
             break;
     }
 
