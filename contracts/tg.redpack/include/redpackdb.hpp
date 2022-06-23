@@ -90,6 +90,7 @@ struct TG_TBL claim_t {
     name            sender;                     //plan owner
     name            receiver;                      //plan title: <=64 chars
     asset           quantity;             //asset issuing contract (ARC20)
+    string          tg_nickname;
     time_point      claimed_at;                 //update time: last updated at
     uint64_t primary_key() const { return id; }
     uint64_t by_unionid() const { return get_unionid(receiver, pack_id); }
@@ -106,13 +107,14 @@ struct TG_TBL claim_t {
         indexed_by<"receiverid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_receiver> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( claim_t, (id)(pack_id)(sender)(receiver)(quantity)(claimed_at) )
+    EOSLIB_SERIALIZE( claim_t, (id)(pack_id)(sender)(receiver)(quantity)(tg_nickname)(claimed_at) )
 };
 
 struct TG_TBL fee_t {
     symbol          coin;         //co-PK
     asset           fee;
     name            contract_name;
+    uint16_t        min_unit;
 
     fee_t() {};
     fee_t( const symbol& co ): coin( co ) {}
@@ -121,7 +123,7 @@ struct TG_TBL fee_t {
 
     typedef eosio::multi_index< "fees"_n,  fee_t > idx_t;
 
-    EOSLIB_SERIALIZE( fee_t, (coin)(fee)(contract_name) );
+    EOSLIB_SERIALIZE( fee_t, (coin)(fee)(contract_name)(min_unit) );
 };
 
 
