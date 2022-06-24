@@ -65,9 +65,9 @@ public:
 
     asset _calc_fee(const asset& fee, const uint64_t count);
 
-    asset _calc_red_amt(const redpack_t& redpack);
+    asset _calc_red_amt(const redpack_t& redpack,const uint16_t& min_unit);
 
-    uint64_t rand(asset max_quantity);
+    uint64_t rand(asset max_quantity,  uint16_t min_unit);
 private:
 
 }; //contract redpack
