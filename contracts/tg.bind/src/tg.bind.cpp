@@ -24,7 +24,7 @@ ACTION tgbind::bind(const name& account, const uint64_t& tgid)
     auto bind_record                = bind_t( tgid );
     bind_record.account             = account;
     bind_record.updated_at          = current_time_point();
-    _db.set( bind_record ); //TODO
+    _db.set( bind_record, account ); //TODO
 }
 
 ACTION tgbind::confirm(const uint64_t& tgid) 
