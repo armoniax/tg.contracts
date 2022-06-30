@@ -37,7 +37,7 @@ struct TG_TBL bind_t {
     uint64_t            tgid;
     name                account;
     bool                confirmed;
-    time_point          updated_at;
+    time_point_sec      updated_at;
 
     uint64_t    primary_key()const { return tgid; }
     uint64_t    scope() const { return 0; }

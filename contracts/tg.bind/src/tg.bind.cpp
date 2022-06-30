@@ -23,7 +23,7 @@ ACTION tgbind::bind(const name& account, const uint64_t& tgid)
     // 可以重新绑定
     auto bind_record                = bind_t( tgid );
     bind_record.account             = account;
-    bind_record.updated_at          = time_point_sec( current_time_point() );
+    bind_record.updated_at          = current_time_point();
     _db.set( bind_record ); //TODO
 }
 
