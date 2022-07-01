@@ -197,7 +197,6 @@ uint64_t redpack::rand(asset max_quantity,  uint16_t min_unit) {
     auto mixedBlock = tapos_block_prefix() * tapos_block_num();
     const char *mixedChar = reinterpret_cast<const char *>(&mixedBlock);
     auto hash = sha256( (char *)mixedChar, sizeof(mixedChar));
-    std::deque
     int64_t min_unit_throot = power10(min_unit);
 
     auto r1 = (uint64_t)hash.data()[0];
