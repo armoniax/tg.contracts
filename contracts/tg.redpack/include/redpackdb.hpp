@@ -49,8 +49,8 @@ namespace redpack_status {
 
 };
 
-uint64_t get_unionid( const name& rec, uint64_t packid ) {
-     return rec.value | (packid & 0x00000000FFFFFFFF);
+uint128_t get_unionid( const name& rec, uint64_t packid ) {
+     return ( (uint128_t) rec.value << 64 ) | (packid & 0x00000000FFFFFFFF);
 }
 
 struct TG_TBL redpack_t {
@@ -93,14 +93,14 @@ struct TG_TBL claim_t {
     string          tg_nickname;
     time_point      claimed_at;                 //update time: last updated at
     uint64_t primary_key() const { return id; }
-    uint64_t by_unionid() const { return get_unionid(receiver, pack_id); }
+    uint128_t by_unionid() const { return get_unionid(receiver, pack_id); }
     uint64_t by_claimedid() const { return ((uint64_t)claimed_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
     uint64_t by_sender() const { return sender.value; }
     uint64_t by_receiver() const { return receiver.value; }
     uint64_t by_packid() const { return pack_id; }
 
     typedef eosio::multi_index<"claims"_n, claim_t,
-        indexed_by<"unionid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_unionid> >,
+        indexed_by<"unionid"_n,  const_mem_fun<claim_t, uint128_t, &claim_t::by_unionid> >,
         indexed_by<"claimedid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_claimedid> >,
         indexed_by<"packid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_packid> >,
         indexed_by<"senderid"_n,  const_mem_fun<claim_t, uint64_t, &claim_t::by_sender> >,
