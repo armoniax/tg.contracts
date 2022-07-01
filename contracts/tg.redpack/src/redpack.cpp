@@ -85,7 +85,9 @@ void redpack::claim( const name& claimer, const uint64_t& pack_id, const string&
     claim_t::idx_t claims(_self, _self.value);
     auto claims_index = claims.get_index<"unionid"_n>();
     uint128_t sec_index = get_unionid(claimer,pack_id);
-    CHECKC( claims_index.find(sec_index) == claims_index.end() ,err::NOT_REPEAT_RECEIVE, "Can't repeat to receive" );
+    auto claims_iter = claims_index.find(sec_index);
+    eosio::print(claims_iter->id);
+    CHECKC( claims_iter == claims_index.end() ,err::NOT_REPEAT_RECEIVE, "Can't repeat to receive" );
 
     fee_t fee_info(redpack.total_quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
@@ -195,7 +197,7 @@ uint64_t redpack::rand(asset max_quantity,  uint16_t min_unit) {
     auto mixedBlock = tapos_block_prefix() * tapos_block_num();
     const char *mixedChar = reinterpret_cast<const char *>(&mixedBlock);
     auto hash = sha256( (char *)mixedChar, sizeof(mixedChar));
-
+    std::deque
     int64_t min_unit_throot = power10(min_unit);
 
     auto r1 = (uint64_t)hash.data()[0];
