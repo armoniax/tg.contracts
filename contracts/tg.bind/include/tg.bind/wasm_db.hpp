@@ -22,41 +22,48 @@ public:
 
     template<typename RecordType>
     bool get(RecordType& record) {
-        auto scope = record.scope();
-        if (scope == 0) scope = code.value;
+        auto scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
-        if (tbl.find(record.primary_key()) == tbl.end())
+        typename RecordType::idx_t idx(code, scope);
+        if (idx.find(record.primary_key()) == idx.end())
             return false;
 
-        record = tbl.get(record.primary_key());
+        record = idx.get(record.primary_key());
+        return true;
+    }
+    template<typename RecordType>
+    bool get(const uint64_t& scope, RecordType& record) {
+        typename RecordType::idx_t idx(code, scope);
+        if (idx.find(record.primary_key()) == idx.end())
+            return false;
+
+        record = idx.get(record.primary_key());
         return true;
     }
   
     template<typename RecordType>
-    auto get_tbl(RecordType& record) {
+    auto get_idx(RecordType& record) {
         auto scope = record.scope();
         if (scope == 0) scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
-        return tbl;
+        typename RecordType::idx_t idx(code, scope);
+        return idx;
     }
 
     template<typename RecordType>
-    return_t set(const RecordType& record) {
-        auto scope = record.scope();
-        if (scope == 0) scope = code.value;
+    return_t set(const RecordType& record, const name& payer) {
+        auto scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
-        auto itr = tbl.find( record.primary_key() );
-        if ( itr != tbl.end()) {
-            tbl.modify( itr, code, [&]( auto& item ) {
+        typename RecordType::idx_t idx(code, scope);
+        auto itr = idx.find( record.primary_key() );
+        if ( itr != idx.end()) {
+            idx.modify( itr, same_payer, [&]( auto& item ) {
                 item = record;
             });
             return return_t::MODIFIED;
 
         } else {
-            tbl.emplace( code, [&]( auto& item ) {
+            idx.emplace( payer, [&]( auto& item ) {
                 item = record;
             });
             return return_t::APPENDED;
@@ -64,14 +71,55 @@ public:
     }
 
     template<typename RecordType>
-    void del(const RecordType& record) {
-        auto scope = record.scope();
-        if (scope == 0) scope = code.value;
+    return_t set(const RecordType& record) {
+        auto scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
-        auto itr = tbl.find(record.primary_key());
-        if ( itr != tbl.end() ) {
-            tbl.erase(itr);
+        typename RecordType::idx_t idx(code, scope);
+        auto itr = idx.find( record.primary_key() );
+        check( itr != idx.end(), "record not found" );
+
+        idx.modify( itr, same_payer, [&]( auto& item ) {
+            item = record;
+        });
+        return return_t::MODIFIED;
+    }
+
+    template<typename RecordType>
+    return_t set(const uint64_t& scope, const RecordType& record, const bool& isModify = true) {
+        typename RecordType::idx_t idx(code, scope);
+        
+        if (isModify) {
+            auto itr = idx.find( record.primary_key() );
+            check( itr != idx.end(), "record not found" );
+            idx.modify( itr, code, [&]( auto& item ) {
+                item = record;
+            });
+            return return_t::MODIFIED;
+        } 
+
+        idx.emplace( code, [&]( auto& item ) {
+            item = record;
+        });
+        return return_t::APPENDED;
+    }
+
+    template<typename RecordType>
+    void del(const RecordType& record) {
+        auto scope = code.value;
+
+        typename RecordType::idx_t idx(code, scope);
+        auto itr = idx.find(record.primary_key());
+        if ( itr != idx.end() ) {
+            idx.erase(itr);
+        }
+    }
+
+    template<typename RecordType>
+    void del_scope(const uint64_t& scope, const RecordType& record) {
+        typename RecordType::idx_t idx(code, scope);
+        auto itr = idx.find(record.primary_key());
+        if ( itr != idx.end() ) {
+            idx.erase(itr);
         }
     }
 
