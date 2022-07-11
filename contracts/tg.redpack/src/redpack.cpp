@@ -51,7 +51,7 @@ void redpack::ontransfer( name from, name to, asset quantity, string memo )
     CHECKC( fee < quantity, err::QUANTITY_NOT_ENOUGH , "not enough " );
 
     asset total_quantity = quantity - fee;
-    CHECKC( (total_quantity/count).amount >= power10(fee_info.min_unit), err::QUANTITY_NOT_ENOUGH , "not enough " );
+    CHECKC( (total_quantity/count).amount >= power10(quantity.symbol.precision()-fee_info.min_unit), err::QUANTITY_NOT_ENOUGH , "not enough " );
 
     redpack_t::idx_t redpacks( _self, _self.value );
     auto id = redpacks.available_primary_key();
@@ -208,4 +208,6 @@ uint64_t redpack::rand(asset max_quantity,  uint16_t min_unit) {
 
     return rand_value < min_value ? min_value : rand_value;
 }
+
+
 
