@@ -130,7 +130,7 @@ void redpack::cancel( const uint64_t& pack_id )
     redpack_t redpack(pack_id);
     CHECKC( _db.get(redpack), err::RECORD_NO_FOUND, "redpack not found" );
     CHECKC( redpack.status == redpack_status::CREATED, err::EXPIRED, "redpack has expired" );
-    CHECKC( current_time_point() > redpack.created_at + eosio::days(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
+    CHECKC( current_time_point() > redpack.created_at + eosio::hours(_gstate.expire_hours), err::NOT_EXPIRED, "expiration date is not reached" );
 
     fee_t fee_info(redpack.total_quantity.symbol);
     CHECKC( _db.get(fee_info), err::FEE_NOT_FOUND, "fee not found" );
